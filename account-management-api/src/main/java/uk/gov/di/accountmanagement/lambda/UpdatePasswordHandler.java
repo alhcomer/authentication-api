@@ -150,7 +150,7 @@ public class UpdatePasswordHandler
 
             if (isNewPasswordSameAsCurrentPassword(
                     currentPassword, updatePasswordRequest.getNewPassword())) {
-                return generateApiGatewayProxyErrorResponse(400, ErrorResponse.ERROR_1024);
+                return generateApiGatewayProxyErrorResponse(404, ErrorResponse.ERROR_1024);
             }
 
             dynamoService.updatePassword(
