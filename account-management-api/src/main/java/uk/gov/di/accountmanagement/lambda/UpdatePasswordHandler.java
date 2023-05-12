@@ -146,11 +146,9 @@ public class UpdatePasswordHandler
                             .getUserCredentialsFromEmail(updatePasswordRequest.getEmail())
                             .getPassword();
 
-            LOG.info("current password: " + currentPassword);
-
             if (isNewPasswordSameAsCurrentPassword(
                     currentPassword, updatePasswordRequest.getNewPassword())) {
-                return generateApiGatewayProxyErrorResponse(404, ErrorResponse.ERROR_1024);
+                return generateApiGatewayProxyErrorResponse(400, ErrorResponse.ERROR_1024);
             }
 
             dynamoService.updatePassword(
