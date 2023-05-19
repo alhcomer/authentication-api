@@ -33,7 +33,7 @@ if [ $# -eq 0 ]; then
 fi
 
 function exportSubjectSaltLine() {
-  echo -n "exporting salt for: ${1}"
+  echo "${count}: exporting salt for: ${1}"
   salt="$(
     gds-cli aws ${GDS_AWS_ACCOUNT} aws dynamodb query \
       --table-name "${ENVIRONMENT_NAME}-user-profile" \
@@ -49,6 +49,8 @@ function exportSubjectSaltLine() {
   echo ${1},$salt >>"${2}"
 }
 
+count=0
 while IFS= read -r intsub; do
-  exportSubjectSaltLine "$intsub" "${2}"
+  count=$((count+1))
+  exportSubjectSaltLine "$intsub" "${2}" "${count}"
 done <"${1}"
