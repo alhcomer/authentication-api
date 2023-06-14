@@ -6,7 +6,9 @@ import uk.gov.di.authentication.frontendapi.domain.FrontendAuditableEvent;
 import uk.gov.di.authentication.shared.domain.AuditableEvent;
 import uk.gov.di.authentication.shared.entity.ClientRegistry;
 import uk.gov.di.authentication.shared.entity.ErrorResponse;
+import uk.gov.di.authentication.shared.entity.JourneyType;
 import uk.gov.di.authentication.shared.entity.MFAMethodType;
+import uk.gov.di.authentication.shared.entity.NotificationType;
 import uk.gov.di.authentication.shared.services.AuditService;
 import uk.gov.di.authentication.shared.services.AuthenticationService;
 import uk.gov.di.authentication.shared.services.CodeStorageService;
@@ -115,4 +117,6 @@ public abstract class MfaCodeProcessor {
     public abstract Optional<ErrorResponse> validateCode();
 
     public abstract void processSuccessfulCodeRequest(String ipAddress, String persistentSessionId);
+
+    protected abstract NotificationType getNotificationType(JourneyType journeyType);
 }

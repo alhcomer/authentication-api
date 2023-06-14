@@ -8,6 +8,7 @@ import uk.gov.di.authentication.shared.entity.ErrorResponse;
 import uk.gov.di.authentication.shared.entity.JourneyType;
 import uk.gov.di.authentication.shared.entity.MFAMethod;
 import uk.gov.di.authentication.shared.entity.MFAMethodType;
+import uk.gov.di.authentication.shared.entity.NotificationType;
 import uk.gov.di.authentication.shared.helpers.NowHelper;
 import uk.gov.di.authentication.shared.services.AuditService;
 import uk.gov.di.authentication.shared.services.AuthenticationService;
@@ -219,5 +220,10 @@ public class AuthAppCodeProcessor extends MfaCodeProcessor {
 
     private long getTimeWindowFromTime(long time) {
         return time / TimeUnit.SECONDS.toMillis(windowTime);
+    }
+
+    @Override
+    protected NotificationType getNotificationType(JourneyType journeyType) {
+        return null;
     }
 }

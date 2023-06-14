@@ -111,4 +111,11 @@ public class PhoneNumberCodeProcessor extends MfaCodeProcessor {
                 break;
         }
     }
+
+    @Override
+    protected NotificationType getNotificationType(JourneyType journeyType) {
+        return journeyType.equals(JourneyType.SIGN_IN)
+                ? NotificationType.MFA_SMS
+                : NotificationType.VERIFY_PHONE_NUMBER;
+    }
 }
