@@ -5,11 +5,13 @@ import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.ScheduledEvent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import uk.gov.di.authentication.shared.entity.BulkEmailStatus;
 import uk.gov.di.authentication.shared.services.BulkEmailUsersService;
 import uk.gov.di.authentication.shared.services.ConfigurationService;
 import uk.gov.di.authentication.shared.services.DynamoService;
 
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class BulkUserEmailAudienceLoaderScheduledEventHandler
@@ -50,6 +52,14 @@ public class BulkUserEmailAudienceLoaderScheduledEventHandler
 
         final long bulkUserEmailMaxAudienceLoadUserCount =
                 configurationService.getBulkUserEmailMaxAudienceLoadUserCount();
+
+        Map<String, AttributeValue> exclusiveStartKey = null;
+
+        if (event.getDetail() != null && event.getDetail().containsKey("lastEvaluatedKey")) {
+            String lastEvaluatedKey = event.getDetail().get("lastEvaluatedKey").toString();
+            exclusiveStartKey =
+                    Map.of("SubjectID", AttributeValue.builder().s(lastEvaluatedKey).build());
+        }
 
         AtomicLong itemCounter = new AtomicLong();
         itemCounter.set(0);

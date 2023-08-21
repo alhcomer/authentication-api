@@ -4,6 +4,7 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.ScheduledEvent;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import uk.gov.di.authentication.shared.entity.BulkEmailStatus;
 import uk.gov.di.authentication.shared.entity.UserProfile;
 import uk.gov.di.authentication.shared.services.BulkEmailUsersService;
@@ -11,6 +12,7 @@ import uk.gov.di.authentication.shared.services.ConfigurationService;
 import uk.gov.di.authentication.shared.services.DynamoService;
 
 import java.util.List;
+import java.util.Map;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -119,5 +121,48 @@ class BulkUserEmailAudienceLoaderScheduledEventHandlerTest {
                 .addUser(TEST_SUBJECT_IDS[3], BulkEmailStatus.PENDING);
         verify(bulkEmailUsersService, times(0))
                 .addUser(TEST_SUBJECT_IDS[4], BulkEmailStatus.PENDING);
+    }
+
+    @Test
+    void shouldReinvokeLambdaWithLastEvaluatedKeyWhenItExists() {
+        when(configurationService.getBulkUserEmailMaxAudienceLoadUserCount()).thenReturn(10L);
+        var lastEvaluatedKey =
+                Map.of("SubjectID", AttributeValue.builder().s(TEST_SUBJECT_IDS[2]).build());
+
+        when(dynamoService.getBulkUserEmailAudienceStream(null))
+                .thenReturn(
+                                List.of(
+                                        new UserProfile().withSubjectID(TEST_SUBJECT_IDS[0]),
+                                        new UserProfile().withSubjectID(TEST_SUBJECT_IDS[1]),
+                                        new UserProfile().withSubjectID(TEST_SUBJECT_IDS[2]))
+                                        .stream()
+                );
+
+        when(dynamoService.getBulkUserEmailAudienceStream(lastEvaluatedKey))
+                .thenReturn(
+                                List.of(
+                                        new UserProfile().withSubjectID(TEST_SUBJECT_IDS[3]),
+                                        new UserProfile().withSubjectID(TEST_SUBJECT_IDS[4]))
+                                        .stream());
+
+        bulkUserEmailAudienceLoaderScheduledEventHandler.handleRequest(scheduledEvent, mockContext);
+
+        when(scheduledEvent.getDetail())
+                .thenReturn(Map.of("lastEvaluatedKey", TEST_SUBJECT_IDS[2]));
+
+        bulkUserEmailAudienceLoaderScheduledEventHandler.handleRequest(scheduledEvent, mockContext);
+
+        verify(bulkEmailUsersService, times(1))
+                .addUser(TEST_SUBJECT_IDS[0], BulkEmailStatus.PENDING);
+        verify(bulkEmailUsersService, times(1))
+                .addUser(TEST_SUBJECT_IDS[1], BulkEmailStatus.PENDING);
+        verify(bulkEmailUsersService, times(1))
+                .addUser(TEST_SUBJECT_IDS[2], BulkEmailStatus.PENDING);
+        verify(bulkEmailUsersService, times(1))
+                .addUser(TEST_SUBJECT_IDS[3], BulkEmailStatus.PENDING);
+        verify(bulkEmailUsersService, times(1))
+                .addUser(TEST_SUBJECT_IDS[4], BulkEmailStatus.PENDING);
+
+        //        verify(//Lambda gets invoked with last evaluated key as exclusive start key)
     }
 }
