@@ -334,6 +334,24 @@ class DynamoServiceIntegrationTest {
                 dynamoService.getOptionalUserProfileFromSubject("8888"), equalTo(Optional.empty()));
     }
 
+    //    @Test
+    //    void shouldReturnUsersBetweenCreatedDate() {
+    //        setupDynamoWithMultipleUsers();
+    //
+    //        var userPage =
+    //        dynamoService.getBulkEmailAudienceStreamBetweenDates("2023-08-21", "2023-08-21");
+    //
+    //        userPage.forEach(page ->
+    //        {
+    //            page.items().stream().forEach(userProfile -> {
+    //                assertTrue(
+    //                        userProfile.getCreated().startsWith("2023-08-21")
+    //                        );
+    //            });
+    //        });
+    //
+    //    }
+
     private void setupDynamoWithMultipleUsers() {
         userStore.signUp("email1", "password-1", new Subject("1111"));
         userStore.signUp("email2", "password-1", new Subject("2222"));

@@ -119,6 +119,7 @@ public class UserProfile {
         return this;
     }
 
+    @DynamoDbSecondaryPartitionKey(indexNames = {"CreatedDateIndex"})
     @DynamoDbAttribute(ATTRIBUTE_CREATED)
     public String getCreated() {
         return created;

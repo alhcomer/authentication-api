@@ -48,7 +48,7 @@ class BulkUserEmailAudienceLoaderScheduledEventHandlerTest {
     @Test
     void shouldAddOneBulkEmailUser() {
         when(configurationService.getBulkUserEmailMaxAudienceLoadUserCount()).thenReturn(10L);
-        when(dynamoService.getBulkUserEmailAudienceStream())
+        when(dynamoService.getBulkUserEmailAudienceStreamAllUsers())
                 .thenReturn(List.of(new UserProfile().withSubjectID(SUBJECT_ID)).stream());
 
         bulkUserEmailAudienceLoaderScheduledEventHandler.handleRequest(scheduledEvent, mockContext);
@@ -59,7 +59,7 @@ class BulkUserEmailAudienceLoaderScheduledEventHandlerTest {
     @Test
     void shouldNotAddBulkEmailUserWhenMaxLoadAudienceUserCountIsZero() {
         when(configurationService.getBulkUserEmailMaxAudienceLoadUserCount()).thenReturn(0L);
-        when(dynamoService.getBulkUserEmailAudienceStream())
+        when(dynamoService.getBulkUserEmailAudienceStreamAllUsers())
                 .thenReturn(List.of(new UserProfile().withSubjectID(SUBJECT_ID)).stream());
 
         bulkUserEmailAudienceLoaderScheduledEventHandler.handleRequest(scheduledEvent, mockContext);
@@ -70,7 +70,7 @@ class BulkUserEmailAudienceLoaderScheduledEventHandlerTest {
     @Test
     void shouldAddManyBulkEmailUsers() {
         when(configurationService.getBulkUserEmailMaxAudienceLoadUserCount()).thenReturn(10L);
-        when(dynamoService.getBulkUserEmailAudienceStream())
+        when(dynamoService.getBulkUserEmailAudienceStreamAllUsers())
                 .thenReturn(
                         List.of(
                                 new UserProfile().withSubjectID(TEST_SUBJECT_IDS[0]),
@@ -97,7 +97,7 @@ class BulkUserEmailAudienceLoaderScheduledEventHandlerTest {
     @Test
     void shouldAddOnlyMaxLoadAudienceUserCountBulkEmailUsers() {
         when(configurationService.getBulkUserEmailMaxAudienceLoadUserCount()).thenReturn(3L);
-        when(dynamoService.getBulkUserEmailAudienceStream())
+        when(dynamoService.getBulkUserEmailAudienceStreamAllUsers())
                 .thenReturn(
                         List.of(
                                 new UserProfile().withSubjectID(TEST_SUBJECT_IDS[0]),

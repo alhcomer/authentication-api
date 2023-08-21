@@ -33,14 +33,15 @@ public class UserStoreExtension extends DynamoExtension implements AfterEachCall
     public static final String EMAIL_FIELD = "Email";
     public static final String SUBJECT_ID_FIELD = "SubjectID";
     public static final String PUBLIC_SUBJECT_ID_FIELD = "PublicSubjectID";
-
     public static final String ACCOUNT_VERIFIED_FIELD = "accountVerified";
     public static final String TEST_USER_FIELD = "testUser";
+    public static final String CREATED_FIELD = "Created";
+
     public static final String SUBJECT_ID_INDEX = "SubjectIDIndex";
     public static final String PUBLIC_SUBJECT_ID_INDEX = "PublicSubjectIDIndex";
-
     public static final String VERIFIED_ACCOUNT_ID_INDEX = "VerifiedAccountIndex";
     public static final String TEST_USER_INDEX = "TestUserIndex";
+    public static final String CREATED_DATE_INDEX = "CreatedDateIndex";
 
     private DynamoService dynamoService;
 
@@ -291,6 +292,10 @@ public class UserStoreExtension extends DynamoExtension implements AfterEachCall
                                 AttributeDefinition.builder()
                                         .attributeName(TEST_USER_FIELD)
                                         .attributeType(ScalarAttributeType.N)
+                                        .build(),
+                                AttributeDefinition.builder()
+                                        .attributeName(CREATED_FIELD)
+                                        .attributeType(ScalarAttributeType.S)
                                         .build())
                         .globalSecondaryIndexes(
                                 GlobalSecondaryIndex.builder()
@@ -338,6 +343,24 @@ public class UserStoreExtension extends DynamoExtension implements AfterEachCall
                                                         .keyType(KeyType.HASH)
                                                         .build())
                                         .projection(t -> t.projectionType(ProjectionType.KEYS_ONLY))
+                                        .build(),
+                                GlobalSecondaryIndex.builder()
+                                        .indexName(CREATED_DATE_INDEX)
+                                        //                                        .keySchema(
+                                        //
+                                        // KeySchemaElement.builder()
+                                        //
+                                        // .attributeName(SUBJECT_ID_FIELD)
+                                        //
+                                        // .keyType(KeyType.HASH)
+                                        //
+                                        // .build())
+                                        .keySchema(
+                                                KeySchemaElement.builder()
+                                                        .attributeName(CREATED_FIELD)
+                                                        .keyType(KeyType.HASH)
+                                                        .build())
+                                        .projection(t -> t.projectionType(ProjectionType.ALL))
                                         .build())
                         .build();
 

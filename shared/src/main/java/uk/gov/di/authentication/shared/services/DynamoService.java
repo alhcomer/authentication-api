@@ -10,6 +10,7 @@ import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
 import software.amazon.awssdk.enhanced.dynamodb.Expression;
 import software.amazon.awssdk.enhanced.dynamodb.Key;
 import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
+import software.amazon.awssdk.enhanced.dynamodb.model.Page;
 import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
 import software.amazon.awssdk.enhanced.dynamodb.model.QueryEnhancedRequest;
 import software.amazon.awssdk.enhanced.dynamodb.model.ScanEnhancedRequest;
@@ -50,6 +51,7 @@ public class DynamoService implements AuthenticationService {
     private static final String USER_PROFILE_TABLE = "user-profile";
     private static final String USER_CREDENTIAL_TABLE = "user-credentials";
     private static final String TEST_USER_INDEX_NAME = "TestUserIndex";
+    public static final String CREATED_DATE_INDEX = "CreatedDateIndex";
     private static final Logger LOG = LogManager.getLogger(DynamoService.class);
 
     public DynamoService(ConfigurationService configurationService) {
@@ -732,10 +734,45 @@ public class DynamoService implements AuthenticationService {
         }
     }
 
-    public Stream<UserProfile> getBulkUserEmailAudienceStream() {
+    public Stream<UserProfile> getBulkUserEmailAudienceStreamAllUsers() {
         ScanEnhancedRequest scanRequest =
                 ScanEnhancedRequest.builder().addAttributeToProject("SubjectID").build();
         return dynamoUserProfileTable.scan(scanRequest).items().stream();
+    }
+
+    public Stream<Page<UserProfile>> getBulkEmailAudienceStreamBetweenDates(
+            String fromDate, String toDate) {
+        QueryConditional q =
+                QueryConditional.sortBetween(
+                        Key.builder().partitionValue(fromDate).build(),
+                        Key.builder().partitionValue(toDate).build());
+        QueryEnhancedRequest queryEnhancedRequest =
+                QueryEnhancedRequest.builder()
+                        .consistentRead(false)
+                        .queryConditional(q)
+                        .addAttributeToProject("SubjectID")
+                        .build();
+        return dynamoUserProfileTable
+                .index(CREATED_DATE_INDEX)
+                .query(queryEnhancedRequest)
+                .stream();
+
+        //        Condition equalsBulkEmailStatus =
+        //                Condition.builder()
+        //                        .comparisonOperator(ComparisonOperator.BETWEEN)
+        //                        .attributeValueList(
+        //                                AttributeValue.builder().s(fromDate).build(),
+        // AttributeValue.builder().s(toDate).build())
+        //                        .build();
+        //
+        //        QueryRequest queryRequest =
+        //                QueryRequest.builder()
+        //                        .tableName(
+        //                                dynamoUserProfileTable.tableName())
+        //                        .keyConditions(Map.of("Created", equalsBulkEmailStatus))
+        //                        .indexName(CREATED_DATE_INDEX)
+        //                        .build();
+        //        return null;
     }
 
     private static String hashPassword(String password) {

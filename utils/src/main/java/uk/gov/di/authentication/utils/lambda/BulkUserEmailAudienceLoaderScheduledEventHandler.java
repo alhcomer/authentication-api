@@ -54,7 +54,7 @@ public class BulkUserEmailAudienceLoaderScheduledEventHandler
         AtomicLong itemCounter = new AtomicLong();
         itemCounter.set(0);
         dynamoService
-                .getBulkUserEmailAudienceStream()
+                .getBulkUserEmailAudienceStreamAllUsers()
                 .takeWhile(
                         userProfile -> (bulkUserEmailMaxAudienceLoadUserCount > itemCounter.get()))
                 .forEach(
