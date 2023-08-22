@@ -37,7 +37,7 @@ class LambdaInvokerServiceTest {
         LambdaInvokerService lambdaInvokerService =
                 new LambdaInvokerService(configurationService, lambdaClient);
 
-        lambdaInvokerService.invokeWithPayload(configurationService, scheduledEvent);
+        lambdaInvokerService.invokeWithPayload(scheduledEvent);
 
         verify(lambdaClient).invoke(invokeRequest);
     }

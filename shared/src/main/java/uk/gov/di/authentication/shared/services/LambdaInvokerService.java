@@ -34,8 +34,7 @@ public class LambdaInvokerService implements LambdaInvoker {
     }
 
     @Override
-    public void invokeWithPayload(
-            ConfigurationService configurationService, ScheduledEvent scheduledEvent) {
+    public void invokeWithPayload(ScheduledEvent scheduledEvent) {
         try {
             SdkBytes payload =
                     SdkBytes.fromByteArray(

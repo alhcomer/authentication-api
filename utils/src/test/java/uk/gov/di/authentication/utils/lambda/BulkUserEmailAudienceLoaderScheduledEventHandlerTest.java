@@ -10,11 +10,15 @@ import uk.gov.di.authentication.shared.entity.UserProfile;
 import uk.gov.di.authentication.shared.services.BulkEmailUsersService;
 import uk.gov.di.authentication.shared.services.ConfigurationService;
 import uk.gov.di.authentication.shared.services.DynamoService;
+import uk.gov.di.authentication.shared.services.LambdaInvokerService;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -32,6 +36,8 @@ class BulkUserEmailAudienceLoaderScheduledEventHandlerTest {
 
     private final ConfigurationService configurationService = mock(ConfigurationService.class);
 
+    private final LambdaInvokerService lambdaInvokerService = mock(LambdaInvokerService.class);
+
     private final ScheduledEvent scheduledEvent = mock(ScheduledEvent.class);
 
     private final String SUBJECT_ID = "subject-id";
@@ -44,7 +50,10 @@ class BulkUserEmailAudienceLoaderScheduledEventHandlerTest {
     void setUp() {
         bulkUserEmailAudienceLoaderScheduledEventHandler =
                 new BulkUserEmailAudienceLoaderScheduledEventHandler(
-                        bulkEmailUsersService, dynamoService, configurationService);
+                        bulkEmailUsersService,
+                        dynamoService,
+                        configurationService,
+                        lambdaInvokerService);
     }
 
     @Test
@@ -66,7 +75,7 @@ class BulkUserEmailAudienceLoaderScheduledEventHandlerTest {
 
         bulkUserEmailAudienceLoaderScheduledEventHandler.handleRequest(scheduledEvent, mockContext);
 
-        verify(bulkEmailUsersService, times(0)).addUser(SUBJECT_ID, BulkEmailStatus.PENDING);
+        verify(bulkEmailUsersService, never()).addUser(SUBJECT_ID, BulkEmailStatus.PENDING);
     }
 
     @Test
@@ -117,38 +126,25 @@ class BulkUserEmailAudienceLoaderScheduledEventHandlerTest {
                 .addUser(TEST_SUBJECT_IDS[1], BulkEmailStatus.PENDING);
         verify(bulkEmailUsersService, times(1))
                 .addUser(TEST_SUBJECT_IDS[2], BulkEmailStatus.PENDING);
-        verify(bulkEmailUsersService, times(0))
+        verify(bulkEmailUsersService, never())
                 .addUser(TEST_SUBJECT_IDS[3], BulkEmailStatus.PENDING);
-        verify(bulkEmailUsersService, times(0))
+        verify(bulkEmailUsersService, never())
                 .addUser(TEST_SUBJECT_IDS[4], BulkEmailStatus.PENDING);
     }
 
     @Test
-    void shouldReinvokeLambdaWithLastEvaluatedKeyWhenItExists() {
+    void shouldReinvokeLambdaWithLastSubjectIdWhenNoInitialStartKey() {
         when(configurationService.getBulkUserEmailMaxAudienceLoadUserCount()).thenReturn(10L);
-        var lastEvaluatedKey =
-                Map.of("SubjectID", AttributeValue.builder().s(TEST_SUBJECT_IDS[2]).build());
 
         when(dynamoService.getBulkUserEmailAudienceStream(null))
                 .thenReturn(
-                                List.of(
-                                        new UserProfile().withSubjectID(TEST_SUBJECT_IDS[0]),
-                                        new UserProfile().withSubjectID(TEST_SUBJECT_IDS[1]),
-                                        new UserProfile().withSubjectID(TEST_SUBJECT_IDS[2]))
-                                        .stream()
-                );
+                        List.of(
+                                new UserProfile().withSubjectID(TEST_SUBJECT_IDS[0]),
+                                new UserProfile().withSubjectID(TEST_SUBJECT_IDS[1]),
+                                new UserProfile().withSubjectID(TEST_SUBJECT_IDS[2]))
+                                .stream());
 
-        when(dynamoService.getBulkUserEmailAudienceStream(lastEvaluatedKey))
-                .thenReturn(
-                                List.of(
-                                        new UserProfile().withSubjectID(TEST_SUBJECT_IDS[3]),
-                                        new UserProfile().withSubjectID(TEST_SUBJECT_IDS[4]))
-                                        .stream());
-
-        bulkUserEmailAudienceLoaderScheduledEventHandler.handleRequest(scheduledEvent, mockContext);
-
-        when(scheduledEvent.getDetail())
-                .thenReturn(Map.of("lastEvaluatedKey", TEST_SUBJECT_IDS[2]));
+        when(scheduledEvent.getDetail()).thenReturn(null);
 
         bulkUserEmailAudienceLoaderScheduledEventHandler.handleRequest(scheduledEvent, mockContext);
 
@@ -158,11 +154,76 @@ class BulkUserEmailAudienceLoaderScheduledEventHandlerTest {
                 .addUser(TEST_SUBJECT_IDS[1], BulkEmailStatus.PENDING);
         verify(bulkEmailUsersService, times(1))
                 .addUser(TEST_SUBJECT_IDS[2], BulkEmailStatus.PENDING);
+        verify(bulkEmailUsersService, never())
+                .addUser(TEST_SUBJECT_IDS[3], BulkEmailStatus.PENDING);
+        verify(bulkEmailUsersService, never())
+                .addUser(TEST_SUBJECT_IDS[4], BulkEmailStatus.PENDING);
+
+        verify(scheduledEvent, times(1)).setDetail(Map.of("lastEvaluatedKey", TEST_SUBJECT_IDS[2]));
+        verify(lambdaInvokerService, times(1)).invokeWithPayload(scheduledEvent);
+    }
+
+    @Test
+    void shouldReinvokeLambdaWithLastSubjectIdWithInitialStartKey() {
+        when(configurationService.getBulkUserEmailMaxAudienceLoadUserCount()).thenReturn(10L);
+        var lastEvaluatedSubjectId = TEST_SUBJECT_IDS[2];
+        var lastEvaluatedKey =
+                Map.of("SubjectID", AttributeValue.builder().s(lastEvaluatedSubjectId).build());
+
+        when(dynamoService.getBulkUserEmailAudienceStream(lastEvaluatedKey))
+                .thenReturn(
+                        List.of(
+                                new UserProfile().withSubjectID(TEST_SUBJECT_IDS[3]),
+                                new UserProfile().withSubjectID(TEST_SUBJECT_IDS[4]))
+                                .stream());
+
+        when(scheduledEvent.getDetail())
+                .thenReturn(Map.of("lastEvaluatedKey", lastEvaluatedSubjectId));
+
+        bulkUserEmailAudienceLoaderScheduledEventHandler.handleRequest(scheduledEvent, mockContext);
+
+        verify(bulkEmailUsersService, never())
+                .addUser(TEST_SUBJECT_IDS[0], BulkEmailStatus.PENDING);
+        verify(bulkEmailUsersService, never())
+                .addUser(TEST_SUBJECT_IDS[1], BulkEmailStatus.PENDING);
+        verify(bulkEmailUsersService, never())
+                .addUser(TEST_SUBJECT_IDS[2], BulkEmailStatus.PENDING);
         verify(bulkEmailUsersService, times(1))
                 .addUser(TEST_SUBJECT_IDS[3], BulkEmailStatus.PENDING);
         verify(bulkEmailUsersService, times(1))
                 .addUser(TEST_SUBJECT_IDS[4], BulkEmailStatus.PENDING);
 
-        //        verify(//Lambda gets invoked with last evaluated key as exclusive start key)
+        verify(scheduledEvent, times(1)).setDetail(Map.of("lastEvaluatedKey", TEST_SUBJECT_IDS[4]));
+        verify(lambdaInvokerService, times(1)).invokeWithPayload(scheduledEvent);
+    }
+
+    @Test
+    void shouldNotReinvokeLambdaWhenNoItemsReturned() {
+        when(configurationService.getBulkUserEmailMaxAudienceLoadUserCount()).thenReturn(10L);
+        var lastEvaluatedSubjectId = TEST_SUBJECT_IDS[2];
+        var lastEvaluatedKey =
+                Map.of("SubjectID", AttributeValue.builder().s(lastEvaluatedSubjectId).build());
+
+        when(dynamoService.getBulkUserEmailAudienceStream(lastEvaluatedKey))
+                .thenReturn(Stream.empty());
+
+        when(scheduledEvent.getDetail())
+                .thenReturn(Map.of("lastEvaluatedKey", lastEvaluatedSubjectId));
+
+        bulkUserEmailAudienceLoaderScheduledEventHandler.handleRequest(scheduledEvent, mockContext);
+
+        verify(bulkEmailUsersService, never())
+                .addUser(TEST_SUBJECT_IDS[0], BulkEmailStatus.PENDING);
+        verify(bulkEmailUsersService, never())
+                .addUser(TEST_SUBJECT_IDS[1], BulkEmailStatus.PENDING);
+        verify(bulkEmailUsersService, never())
+                .addUser(TEST_SUBJECT_IDS[2], BulkEmailStatus.PENDING);
+        verify(bulkEmailUsersService, never())
+                .addUser(TEST_SUBJECT_IDS[3], BulkEmailStatus.PENDING);
+        verify(bulkEmailUsersService, never())
+                .addUser(TEST_SUBJECT_IDS[4], BulkEmailStatus.PENDING);
+
+        verify(scheduledEvent, never()).setDetail(any());
+        verify(lambdaInvokerService, never()).invokeWithPayload(any());
     }
 }

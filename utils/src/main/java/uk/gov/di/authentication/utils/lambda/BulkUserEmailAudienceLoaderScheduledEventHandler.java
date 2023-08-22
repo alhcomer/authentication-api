@@ -10,9 +10,11 @@ import uk.gov.di.authentication.shared.entity.BulkEmailStatus;
 import uk.gov.di.authentication.shared.services.BulkEmailUsersService;
 import uk.gov.di.authentication.shared.services.ConfigurationService;
 import uk.gov.di.authentication.shared.services.DynamoService;
+import uk.gov.di.authentication.shared.services.LambdaInvokerService;
 
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class BulkUserEmailAudienceLoaderScheduledEventHandler
         implements RequestHandler<ScheduledEvent, Void> {
@@ -26,6 +28,8 @@ public class BulkUserEmailAudienceLoaderScheduledEventHandler
 
     private final ConfigurationService configurationService;
 
+    private final LambdaInvokerService lambdaInvokerService;
+
     public BulkUserEmailAudienceLoaderScheduledEventHandler() {
         this(ConfigurationService.getInstance());
     }
@@ -33,10 +37,12 @@ public class BulkUserEmailAudienceLoaderScheduledEventHandler
     public BulkUserEmailAudienceLoaderScheduledEventHandler(
             BulkEmailUsersService bulkEmailUsersService,
             DynamoService dynamoService,
-            ConfigurationService configurationService) {
+            ConfigurationService configurationService,
+            LambdaInvokerService lambdaInvokerService) {
         this.bulkEmailUsersService = bulkEmailUsersService;
         this.dynamoService = dynamoService;
         this.configurationService = configurationService;
+        this.lambdaInvokerService = lambdaInvokerService;
     }
 
     public BulkUserEmailAudienceLoaderScheduledEventHandler(
@@ -44,6 +50,7 @@ public class BulkUserEmailAudienceLoaderScheduledEventHandler
         this.configurationService = configurationService;
         this.bulkEmailUsersService = new BulkEmailUsersService(configurationService);
         this.dynamoService = new DynamoService(configurationService);
+        this.lambdaInvokerService = new LambdaInvokerService(configurationService);
     }
 
     @Override
@@ -62,9 +69,10 @@ public class BulkUserEmailAudienceLoaderScheduledEventHandler
         }
 
         AtomicLong itemCounter = new AtomicLong();
+        AtomicReference<String> lastSubjectId = new AtomicReference<>();
         itemCounter.set(0);
         dynamoService
-                .getBulkUserEmailAudienceStream(null)
+                .getBulkUserEmailAudienceStream(exclusiveStartKey)
                 .takeWhile(
                         userProfile -> (bulkUserEmailMaxAudienceLoadUserCount > itemCounter.get()))
                 .forEach(
@@ -78,9 +86,20 @@ public class BulkUserEmailAudienceLoaderScheduledEventHandler
                                         "Bulk User Email max audience load user count reached: {}. Stopping load.",
                                         itemCounter);
                             }
+                            lastSubjectId.set(userProfile.getSubjectID());
                         });
 
-        LOG.info("Bulk User Email audience load complete.  Total users added: {}", itemCounter);
+        LOG.info(
+                "Bulk User Email audience batch load complete.  Total users added this batch: {}",
+                itemCounter);
+
+        if (itemCounter.get() == 0) {
+            LOG.info("No items remaining to insert, finished import");
+        } else {
+            event.setDetail(Map.of("lastEvaluatedKey", lastSubjectId.get()));
+            lambdaInvokerService.invokeWithPayload(event);
+        }
+
         return null;
     }
 }
