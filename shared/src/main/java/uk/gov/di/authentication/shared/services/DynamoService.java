@@ -768,6 +768,35 @@ public class DynamoService implements AuthenticationService {
         return dynamoUserProfileTable.scan(scanRequest).items().stream();
     }
 
+    public long getUserCountForVerifiedAccountsOnTermsAndConditionsVersion(
+            List<String> termsAndConditionsVersion) {
+
+        List<String> expression = new ArrayList<>();
+        Map<String, AttributeValue> expressionValues = new HashMap<>();
+
+        for (int i = 0; i < termsAndConditionsVersion.size(); i++) {
+            expression.add(String.format("termsAndConditions.version = :tc_version%d", i));
+            expressionValues.put(
+                    String.format(":tc_version%d", i),
+                    stringValue(termsAndConditionsVersion.get(i)));
+        }
+        expression.add("attribute_exists(termsAndConditions.version)");
+        expression.add("accountVerified = :accountVerified");
+        expressionValues.put(":accountVerified", numberValue(1));
+
+        String expressionString = expression.stream().collect(Collectors.joining(" AND "));
+
+        ScanEnhancedRequest scanRequest =
+                ScanEnhancedRequest.builder()
+                        .filterExpression(
+                                Expression.builder()
+                                        .expression(expressionString)
+                                        .expressionValues(expressionValues)
+                                        .build())
+                        .build();
+        return dynamoUserProfileTable.scan(scanRequest).items().stream().count();
+    }
+
     private static String hashPassword(String password) {
         return Argon2EncoderHelper.argon2Hash(password);
     }
