@@ -29,9 +29,10 @@ import org.apache.http.HttpRequest;
 @Provider("Account Management API")
 // @PactFolder("./pacts")
 @PactBroker(
-        host = "localhost",
-        port = "8080",
-        authentication = @PactBrokerAuth(username = "test", password = "test"))
+        host = "ysi5tc076m.execute-api.eu-west-2.amazonaws.com",
+        //port = "80",
+        scheme = "https",
+        authentication = @PactBrokerAuth(username = "bu6DlM&m&217", password = "pBmN41a4E%j&"))
 
 class PactIntegrationTest extends HandlerIntegrationTest {
     private static final String TEST_EMAIL = "testEmail@mail.com";
@@ -65,7 +66,6 @@ class PactIntegrationTest extends HandlerIntegrationTest {
 
     @State("Email code 654321 exists")
     void saveEmailOtpCode(){
-        System.out.println("running this state method");
         redis.saveEmailCode("myNewEmail@mail.com", "654321", 300); //this is the code to be used in the incoming request
     }
 
@@ -104,7 +104,6 @@ class PactIntegrationTest extends HandlerIntegrationTest {
     void testMethod(PactVerificationContext context, HttpRequest request) {
         String publicSubjectID = userStore.signUp(TEST_EMAIL, CURRENT_PASSWORD, SUBJECT);
         userStore.addPhoneNumber(TEST_EMAIL, "07742682930");
-        System.out.println(publicSubjectID);
         request.addHeader("publicSubjectID", publicSubjectID);
         context.verifyInteraction();
     }
