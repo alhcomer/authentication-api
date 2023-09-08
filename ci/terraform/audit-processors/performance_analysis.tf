@@ -73,7 +73,7 @@ resource "aws_lambda_function" "performance_analysis_logging_lambda" {
   }
   kms_key_arn = local.lambda_env_vars_encryption_kms_key_arn
 
-  runtime = "java17"
+  runtime = "java11"
 
   tags = local.default_tags
 }
