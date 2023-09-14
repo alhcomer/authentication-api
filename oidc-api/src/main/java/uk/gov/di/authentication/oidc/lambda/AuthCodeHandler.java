@@ -6,6 +6,7 @@ import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.nimbusds.oauth2.sdk.OAuth2Error;
 import com.nimbusds.oauth2.sdk.ParseException;
+import com.nimbusds.oauth2.sdk.SerializeException;
 import com.nimbusds.oauth2.sdk.id.State;
 import com.nimbusds.openid.connect.sdk.AuthenticationErrorResponse;
 import com.nimbusds.openid.connect.sdk.AuthenticationRequest;
@@ -192,9 +193,9 @@ public class AuthCodeHandler
             VectorOfTrust requestedVectorOfTrust = clientSession.getEffectiveVectorOfTrust();
             if (isNull(session.getCurrentCredentialStrength())
                     || requestedVectorOfTrust
-                                    .getCredentialTrustLevel()
-                                    .compareTo(session.getCurrentCredentialStrength())
-                            > 0) {
+                    .getCredentialTrustLevel()
+                    .compareTo(session.getCurrentCredentialStrength())
+                    > 0) {
                 session.setCurrentCredentialStrength(
                         requestedVectorOfTrust.getCredentialTrustLevel());
             }
@@ -323,6 +324,11 @@ public class AuthCodeHandler
         } catch (UserNotFoundException e) {
             LOG.error(e);
             throw new RuntimeException(e);
+        } catch (SerializeException e) {
+            var errorResponse =
+                    orchestrationAuthorizationService.generateAuthenticationErrorResponse(
+                            authenticationRequest, OAuth2Error.INVALID_REQUEST, redirectUri, state);
+            return generateResponse(418, new AuthCodeResponse(errorResponse.toURI().toString()));
         }
     }
 

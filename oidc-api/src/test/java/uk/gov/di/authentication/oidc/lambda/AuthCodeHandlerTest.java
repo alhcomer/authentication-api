@@ -56,10 +56,7 @@ import uk.gov.di.authentication.sharedtest.helper.KeyPairHelper;
 import uk.gov.di.authentication.sharedtest.logging.CaptureLoggingExtension;
 
 import java.net.URI;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Stream;
 
 import static java.util.Collections.singletonList;
@@ -286,7 +283,7 @@ class AuthCodeHandlerTest {
                         null,
                         authRequest.getState(),
                         null,
-                        authRequest.getResponseMode());
+                        ResponseMode.FORM_POST);
 
         when(clientSession.getDocAppSubjectId()).thenReturn(new Subject(DOC_APP_SUBJECT_ID));
         when(orchestrationAuthorizationService.isClientRedirectUriValid(CLIENT_ID, REDIRECT_URI))
@@ -380,6 +377,7 @@ class AuthCodeHandlerTest {
                         REDIRECT_URI)
                         .state(STATE)
                         .nonce(NONCE)
+                        .responseMode(ResponseMode.FORM_POST)
                         .build();
 
         var params = authRequest.toParameters();
@@ -389,7 +387,7 @@ class AuthCodeHandlerTest {
 
         APIGatewayProxyResponseEvent responseEvent = generateApiRequest();
 
-        assertThat(responseEvent, hasStatus(400));
+        assertThat(responseEvent, hasStatus(420));
         // TODO: maybe add a errorresponse check?
 
         verifyNoInteractions(auditService);
@@ -503,7 +501,13 @@ class AuthCodeHandlerTest {
                             .nonce(NONCE)
                             .build();
         }
-        generateValidSession(authRequest.toParameters(), requestedLevel);
+
+//        generateValidSession(authRequest.toParameters(), requestedLevel);
+        var params = authRequest.toParameters();
+
+        params.put("response_mode", singletonList("form_post"));
+
+        generateValidSession(params, requestedLevel);
         return authRequest;
     }
 
@@ -543,6 +547,7 @@ class AuthCodeHandlerTest {
                         .audience(AUDIENCE)
                         .claim("redirect_uri", REDIRECT_URI.toString())
                         .claim("response_type", ResponseType.CODE.toString())
+                        .claim("response_mode", ResponseMode.FORM_POST.toString())
                         .claim("scope", CustomScopeValue.DOC_CHECKING_APP.toString())
                         .claim("client_id", CLIENT_ID.getValue())
                         .claim("state", STATE.getValue())
