@@ -368,6 +368,35 @@ class AuthCodeHandlerTest {
     }
 
     @Test
+    void shouldGenerateErrorResponseWhenResponseModeIsInvalid()
+    throws JOSEException {
+        session.setEmailAddress(EMAIL);
+
+        generateValidSessionAndAuthRequest(MEDIUM_LEVEL,false);
+
+        APIGatewayProxyRequestEvent event = new APIGatewayProxyRequestEvent();
+        event.setRequestContext(contextWithSourceIp("123.123.123.123"));
+        event.setHeaders(
+                Map.of(
+                        "Session-Id",
+                        SESSION_ID,
+                        "Client-Session-Id",
+                        CLIENT_SESSION_ID,
+                        PersistentIdHelper.PERSISTENT_ID_HEADER_NAME,
+                        PERSISTENT_SESSION_ID));
+
+
+
+        APIGatewayProxyResponseEvent responseEvent = handler.handleRequest(event, context);
+        assertThat(responseEvent, hasStatus(400));
+        // TODO: maybe add a errorresponse check?
+
+        verifyNoInteractions(auditService);
+
+
+    }
+
+    @Test
     void shouldGenerateErrorResponseWhenClientIsNotFound()
             throws ClientNotFoundException, Json.JsonException, JOSEException {
         session.setEmailAddress(EMAIL);
