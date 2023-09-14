@@ -372,28 +372,27 @@ class AuthCodeHandlerTest {
     throws JOSEException {
         session.setEmailAddress(EMAIL);
 
-        generateValidSessionAndAuthRequest(MEDIUM_LEVEL,false);
+        AuthenticationRequest authRequest =
+                new AuthenticationRequest.Builder(
+                        new ResponseType(ResponseType.Value.CODE),
+                        new Scope(OIDCScopeValue.OPENID),
+                        CLIENT_ID,
+                        REDIRECT_URI)
+                        .state(STATE)
+                        .nonce(NONCE)
+                        .build();
 
-        APIGatewayProxyRequestEvent event = new APIGatewayProxyRequestEvent();
-        event.setRequestContext(contextWithSourceIp("123.123.123.123"));
-        event.setHeaders(
-                Map.of(
-                        "Session-Id",
-                        SESSION_ID,
-                        "Client-Session-Id",
-                        CLIENT_SESSION_ID,
-                        PersistentIdHelper.PERSISTENT_ID_HEADER_NAME,
-                        PERSISTENT_SESSION_ID));
+        var params = authRequest.toParameters();
+        params.put("responseMode", List.of("blah"));
 
+        generateValidSession(params, MEDIUM_LEVEL);
 
+        APIGatewayProxyResponseEvent responseEvent = generateApiRequest();
 
-        APIGatewayProxyResponseEvent responseEvent = handler.handleRequest(event, context);
         assertThat(responseEvent, hasStatus(400));
         // TODO: maybe add a errorresponse check?
 
         verifyNoInteractions(auditService);
-
-
     }
 
     @Test
@@ -507,6 +506,8 @@ class AuthCodeHandlerTest {
         generateValidSession(authRequest.toParameters(), requestedLevel);
         return authRequest;
     }
+
+
 
     private void generateValidSession(
             Map<String, List<String>> authRequestParams, CredentialTrustLevel requestedLevel) {
