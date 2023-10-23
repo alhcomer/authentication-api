@@ -29,10 +29,10 @@ import org.apache.http.HttpRequest;
 @Provider("Account Management API")
 // @PactFolder("./pacts")
 @PactBroker(
-        host = "xkcct9sk53.execute-api.eu-west-2.amazonaws.com",
+        host = "HOST",
         //port = "80",
         scheme = "https",
-        authentication = @PactBrokerAuth(token = "jzIYb9LpE71XTNXNVx1U_g"))
+        authentication = @PactBrokerAuth(token = "TOKEN"))
 
 class PactIntegrationTest extends HandlerIntegrationTest {
     private static final String TEST_EMAIL = "testEmail@mail.com";
