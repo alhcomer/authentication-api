@@ -8,13 +8,15 @@ set -euo pipefail
 
 ENVIRONMENT="${1}"
 
+export AWS_REGION="${AWS_REGION:-eu-west-2}" # default to eu-west-2 if not set
+
 if [ "$ENVIRONMENT" = "dev" ]; then
   ENVIRONMENT="build"
 fi
 
 secrets="$(
   aws secretsmanager list-secrets \
-    --filter "Key=\"name\",Values=\"/deploy/${ENVIRONMENT}/\"" --region eu-west-2 |
+    --filter "Key=\"name\",Values=\"/deploy/${ENVIRONMENT}/\"" |
     jq -r '.SecretList[]|[.ARN,(.Name|split("/")|last)]|@tsv'
 )"
 
