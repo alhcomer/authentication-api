@@ -167,8 +167,8 @@ public class NotificationHandler implements RequestHandler<SQSEvent, Void> {
         return null;
     }
 
-    private String buildContactUsUrl(String referer) {
-        var queryParam = Map.of("referer", referer);
+    private String buildContactUsUrl(String fromURL) {
+        var queryParam = Map.of("fromURL", fromURL);
         return buildURI(
                         configurationService.getFrontendBaseUrl(),
                         configurationService.getContactUsLinkRoute(),

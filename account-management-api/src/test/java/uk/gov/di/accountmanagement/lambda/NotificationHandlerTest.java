@@ -56,7 +56,7 @@ public class NotificationHandlerTest {
         NotifyRequest notifyRequest =
                 new NotifyRequest(TEST_EMAIL_ADDRESS, VERIFY_EMAIL, "654321", SupportedLanguage.EN);
         var contactUsLinkUrl =
-                "https://localhost:8080/frontend/contact-us?referer=confirmEmailAddressEmail";
+                "https://localhost:8080/frontend/contact-us?fromURL=confirmEmailAddressEmail";
         String notifyRequestString = objectMapper.writeValueAsString(notifyRequest);
         SQSEvent sqsEvent = generateSQSEvent(notifyRequestString);
 
@@ -101,7 +101,7 @@ public class NotificationHandlerTest {
         NotifyRequest notifyRequest =
                 new NotifyRequest(TEST_EMAIL_ADDRESS, EMAIL_UPDATED, SupportedLanguage.EN);
         var contactUsLinkUrl =
-                "https://localhost:8080/frontend/contact-us?referer=emailAddressUpdatedEmail";
+                "https://localhost:8080/frontend/contact-us?fromURL=emailAddressUpdatedEmail";
         String notifyRequestString = objectMapper.writeValueAsString(notifyRequest);
         SQSEvent sqsEvent = generateSQSEvent(notifyRequestString);
 
@@ -123,7 +123,7 @@ public class NotificationHandlerTest {
         NotifyRequest notifyRequest =
                 new NotifyRequest(TEST_EMAIL_ADDRESS, PASSWORD_UPDATED, SupportedLanguage.EN);
         var contactUsLinkUrl =
-                "https://localhost:8080/frontend/contact-us?referer=passwordUpdatedEmail";
+                "https://localhost:8080/frontend/contact-us?fromURL=passwordUpdatedEmail";
         String notifyRequestString = objectMapper.writeValueAsString(notifyRequest);
         SQSEvent sqsEvent = generateSQSEvent(notifyRequestString);
 
@@ -147,7 +147,7 @@ public class NotificationHandlerTest {
         NotifyRequest notifyRequest =
                 new NotifyRequest(TEST_EMAIL_ADDRESS, PHONE_NUMBER_UPDATED, SupportedLanguage.EN);
         var contactUsLinkUrl =
-                "https://localhost:8080/frontend/contact-us?referer=phoneNumberUpdatedEmail";
+                "https://localhost:8080/frontend/contact-us?fromURL=phoneNumberUpdatedEmail";
         String notifyRequestString = objectMapper.writeValueAsString(notifyRequest);
         SQSEvent sqsEvent = generateSQSEvent(notifyRequestString);
 
@@ -171,7 +171,7 @@ public class NotificationHandlerTest {
         NotifyRequest notifyRequest =
                 new NotifyRequest(TEST_EMAIL_ADDRESS, DELETE_ACCOUNT, SupportedLanguage.EN);
         var contactUsLinkUrl =
-                "https://localhost:8080/frontend/contact-us?referer=accountDeletedEmail";
+                "https://localhost:8080/frontend/contact-us?fromURL=accountDeletedEmail";
         String notifyRequestString = objectMapper.writeValueAsString(notifyRequest);
         SQSEvent sqsEvent = generateSQSEvent(notifyRequestString);
 
@@ -206,7 +206,7 @@ public class NotificationHandlerTest {
         NotifyRequest notifyRequest =
                 new NotifyRequest(TEST_EMAIL_ADDRESS, VERIFY_EMAIL, "654321", SupportedLanguage.EN);
         var contactUsLinkUrl =
-                "https://localhost:8080/frontend/contact-us?referer=confirmEmailAddressEmail";
+                "https://localhost:8080/frontend/contact-us?fromURL=confirmEmailAddressEmail";
         String notifyRequestString = objectMapper.writeValueAsString(notifyRequest);
         SQSEvent sqsEvent = generateSQSEvent(notifyRequestString);
 

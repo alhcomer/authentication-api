@@ -48,7 +48,7 @@ public class NotificationHandlerIntegrationTest extends NotifyIntegrationTest {
                 hasFieldWithValue(
                         "contact-us-link",
                         equalTo(
-                                "http://localhost:3000/frontend/contact-us?referer=confirmEmailAddressEmail")));
+                                "http://localhost:3000/frontend/contact-us?fromURL=confirmEmailAddressEmail")));
     }
 
     @Test
