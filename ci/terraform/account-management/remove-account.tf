@@ -1,3 +1,12 @@
+module "shared_kms_policies" {
+  source = "../shared"
+  environment = var.environment
+  notify_api_key                      = ""
+  test_client_verify_email_otp        = ""
+  test_client_verify_phone_number_otp = ""
+  test_client_email_allowlist         = ""
+}
+
 module "account_management_api_remove_account_role" {
   source      = "../modules/lambda-role"
   environment = var.environment
@@ -11,6 +20,7 @@ module "account_management_api_remove_account_role" {
     module.account_management_txma_audit.access_policy_arn,
     aws_iam_policy.dynamo_am_account_modifiers_read_access_policy.arn,
     aws_iam_policy.dynamo_am_account_modifiers_delete_access_policy.arn,
+    module.shared_kms_policies.account_modifiers_encryption_policy_arn
   ]
 }
 

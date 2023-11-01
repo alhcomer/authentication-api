@@ -1,3 +1,12 @@
+module "shared_kms_policies" {
+  source = "../shared"
+  environment = var.environment
+  notify_api_key                      = ""
+  test_client_verify_email_otp        = ""
+  test_client_verify_phone_number_otp = ""
+  test_client_email_allowlist         = ""
+}
+
 module "frontend_api_reset_password_role" {
   source      = "../modules/lambda-role"
   environment = var.environment
@@ -15,6 +24,7 @@ module "frontend_api_reset_password_role" {
     aws_iam_policy.redis_parameter_policy.arn,
     aws_iam_policy.dynamo_common_passwords_read_access_policy.arn,
     module.oidc_txma_audit.access_policy_arn
+    module.shared_kms_policies.account_modifiers_encryption_policy_arn
   ]
 }
 
